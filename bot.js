@@ -43,8 +43,15 @@ client.on('messageCreate', async message => {
             audio.resume(message);
             break;
 
+        case 'g!next':
+            audio.next(message);
+            break;
+
+        case 'g!test': 
+            audio.test(message);
+            break;
         default:
-            message.channel.send('pa[soidlf');
+            message.channel.send('Not a command there buddy ok? You stupid little guy huh? Yeah thats right. Stupid, and small.');
     }
 
 });

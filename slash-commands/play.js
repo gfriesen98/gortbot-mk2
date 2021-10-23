@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const wait = require('util').promisify(setTimeout);
 const ytdl = require('ytdl-core');
 const { 
     joinVoiceChannel, AudioPlayerStatus, StreamType,

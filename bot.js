@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('./db/connection');
 const TOKEN = process.env.TOKEN;
 const GUILD = process.env.GUILD;
 const {Client, Intents, Collection, IntegrationApplication} = require('discord.js');
@@ -6,7 +7,10 @@ const colors = require('colors');
 const P = process.env.PREFIX;
 const fs = require('fs');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS] });
+const client = new Client({ intents: [
+    Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_VOICE_STATES,
+    Intents.FLAGS.GUILD_MESSAGES
+]});
 client.commands = new Collection();
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -23,7 +27,7 @@ client.on('interactionCreate', async interaction => {
     if (!command) return;
 
     try {
-        await command.execute(interaction);
+        await command.execute(interaction, client);
     } catch (err) {
         console.error(err);
         await interaction.reply({ content: 'There was an error running this command.', ephemeral: true});

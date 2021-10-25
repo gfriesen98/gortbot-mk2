@@ -289,18 +289,55 @@ module.exports = {
         return message.channel.send({embeds: [messageEmbed]});
     },
 
-    test: async (message) => {
-        const args = message.content.split(" ");
+    inQueue: async (message) => {
+        if (message.content.endsWith('g!inq')) return message.channel.send('Provide me sustinence (search terms)');
+        const query = message.content.replace('g!inq ', '').split(' ');
+        const queueTitles = q.map((n, i) => {
+            return {
+                title: n.title,
+                words: n.title.split(' ').map(m => {m = m.replace(/[^\w\s]/gi, ''); return m.toLowerCase()}),
+                wordLetters: n.title.split(' ').map(m => {
+                    m = m.replace(/[^\w\s]/gi, '').toLowerCase();
+                    return m.split('');
+                }),
+                queueIndex: i
+            };
+        });
 
-        const data = await spotifyData(args[1]);
-        const albumURL = data.external_urls.spotify;
-        const albumImgURL = data.images[0].url;
-        const albumName = data.name;
-        const artistName = data.artists[0].name;
-        const totalTracks = data.total_tracks;
+        const results = queueTitles.map(n => {
+            var matchingWordIdx = 0;
+            var matchingLetterIdx = 0;
+            var totalLetters = 0;
+            for (const m of query) {
+                n.words.forEach(w => {
+                    console.log('m',m);
+                    console.log('w', w);
+                    if (m === w) {
+                        matchingWordIdx++;
+                    } else {
+                        console.log('else');
+                        const qSplit = m.split('');
+                        for (const p of n.wordLetters){
+                            totalLetters+=p.length;
+                            for(const g of qSplit) {
+                                if (g === p) {
+                                    matchingLetterIdx++;
+                                }
+                            }
+                        }
+                    }
+                });
+                console.log('letters: ',matchingLetterIdx);
+                console.log('words: ',matchingWordIdx);
+                return {
+                    matchingWordIdx: (matchingWordIdx/n.words.length)*100,
+                    matchingLetterIdx: (matchingLetterIdx/totalLetters)*100,
+                    searchQuery: query.join(" "),
+                    bestMatch: queueTitles[n.queueIndex]
+                }
+            }
+        });
+        console.log(results);
 
-        for (n of data.tracks.items) {
-            console.log(n);
-        }
-    }
+    },
 }

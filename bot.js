@@ -47,8 +47,8 @@ client.on('messageCreate', async message => {
             audio.next(message);
             break;
 
-        case 'g!test': 
-            audio.test(message);
+        case 'g!inq': 
+            audio.inQueue(message);
             break;
         default:
             message.channel.send('Not a command there buddy ok? You stupid little guy huh? Yeah thats right. Stupid, and small.');

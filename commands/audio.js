@@ -292,6 +292,11 @@ module.exports = {
     inQueue: async (message) => {
         if (message.content.endsWith('g!inq')) return message.channel.send('Provide me sustinence (search terms)');
         const query = message.content.replace('g!inq ', '').split(' ');
+        const queryWords = query.split(' ').map(m => {m = m.replace(/[^\w\s]/gi, ''); return m.toLowerCase()});
+        const queryLetters = query.split(' ').map(m => {
+            m = m.replace(/[^\w\s]/gi, '').toLowerCase();
+            return m.split('');
+        });
         const queueTitles = q.map((n, i) => {
             return {
                 title: n.title,

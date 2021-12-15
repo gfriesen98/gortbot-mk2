@@ -1,0 +1,6 @@
+use axios on the bot to hit the better-gserver backend!
+use bot to generate tokens as payload to the backend!
+the payload shall be: 
+    datetime created!
+    request text!
+datetime shall be used to determine how long the url should be alive!

@@ -7,7 +7,7 @@ const {
     createAudioPlayer, createAudioResource 
 } = require('@discordjs/voice');
 
-var q = [];
+const q = [];
 var connection = null;
 var player = createAudioPlayer();
 
@@ -222,10 +222,10 @@ module.exports = {
         player.on(AudioPlayerStatus.Idle, () => {
             // Check if there are still songs in the queue
             // If no queue, destroy connection, otherwise shift the array and call playSong()
+            q.shift();
             if (q.length === 0) {
                 connection.destroy();
             } else {
-                q.shift();
                 playSong(message);
             }
         })

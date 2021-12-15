@@ -43,8 +43,9 @@ async function search(message){
                         if (n.wordLetters[j] !== undefined) {
                             // compare arrays for matching elements
                             const matches = queryLetters[i].filter(e => n.wordLetters[j].includes(e));
+
                             matchingLetters += matches.length;
-                            console.log(matches);
+                            console.log('matches', matches);
                         }
                     }
                 }
@@ -106,4 +107,4 @@ async function search(message){
     // console.log(results);
 }
 // how to determine weight of letter matches doe
-search('g!inq ragne borthers');
+search('g!inq baby keem kendrick lamar range brothers official audio');

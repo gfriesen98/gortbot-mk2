@@ -1,5 +1,4 @@
 #!/usr/bin/node
-
 require('dotenv').config();
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { REST } = require('@discordjs/rest');
@@ -18,14 +17,14 @@ for(const file of commandFiles) {
     commands.push(command.data.toJSON());
 }
 
-const rest = new REST({ version: '9' }).setToken(TOKEN);
+const rest = new REST({ version: '9' }).setToken('NzcxOTg2MzIzMDA3NDcxNjE2.X50GSg.rQIzbrjDnM5Ye_OsHRxwidvrEew');
 
 (async () => {
     try {
         console.log('deploy-commands:'.yellow+' Started refeshing (/) commands...'.italic.yellow);
         
         await rest.put(
-            Routes.applicationGuildCommands(CLIENT, GUILD),
+            Routes.applicationGuildCommands('771986323007471616', '773723561390374973'),
             { body: commands }
         );
 

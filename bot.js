@@ -11,6 +11,7 @@ const colors = require('colors');
 const https = require('https');
 const audio = require('./commands/audio');
 const movie = require('./commands/movie');
+const gambling = require('./commands/gambling');
 const SECRET = process.env.SECRET;
 const P = process.env.PREFIX;
 const upload = multer({ dest: '/tmp/'});
@@ -67,9 +68,20 @@ client.on('messageCreate', async message => {
             audio.inQueue(message);
             break;
 
-        case 'g!currentlyPlaying':
+        case 'g!nowplaying':
             const chat = client.channels.cache.get('920512105906593812');
             movie.currentlyPlaying(message, chat);
+            break;
+        
+        case 'g!points':
+            gambling.points(message);
+            break;
+
+        case 'g!battle':
+            gambling.battle(message);
+            break;
+        
+        case 'g!help':
             break;
         default:
             message.channel.send('Not a command there buddy ok? You stupid little guy huh? Yeah thats right. Stupid, and small.');

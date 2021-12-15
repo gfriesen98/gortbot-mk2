@@ -11,8 +11,6 @@ const colors = require('colors');
 const https = require('https');
 const audio = require('./commands/audio');
 const movie = require('./commands/movie');
-const TOKEN = process.env.TOKEN;
-const GUILD = process.env.GUILD;
 const SECRET = process.env.SECRET;
 const P = process.env.PREFIX;
 const upload = multer({ dest: '/tmp/'});
@@ -188,4 +186,4 @@ app.listen(10000, () => {
 });
 
 
-client.login(TOKEN);
+client.login(process.env.DISCORD_TOKEN);

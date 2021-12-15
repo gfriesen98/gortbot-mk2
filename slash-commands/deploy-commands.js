@@ -17,7 +17,7 @@ for(const file of commandFiles) {
     commands.push(command.data.toJSON());
 }
 
-const rest = new REST({ version: '9' }).setToken('NzcxOTg2MzIzMDA3NDcxNjE2.X50GSg.rQIzbrjDnM5Ye_OsHRxwidvrEew');
+const rest = new REST({ version: '9' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
     try {

@@ -1,9 +1,12 @@
 require('dotenv').config();
+require('./startup');
 require('./db/connection');
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const pfs = fs.promises;
+const {promisify} = require('util');
+const exec = promisify(require('child_process').exec);
 const Rom = require('./db/models/rom');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
@@ -72,7 +75,16 @@ client.on('messageCreate', async message => {
             const chat = client.channels.cache.get('920512105906593812');
             movie.currentlyPlaying(message, chat);
             break;
-        
+
+        case 'g!movies':
+            const command = await exec('bash scripts/movie-list.sh');
+            if (command.stderr) {
+                console.log(command.stderr);
+                return null;
+            }
+            const attachment = new MessageAttachment('/tmp/plex/lists/movies.txt', 'movies.txt');
+            return message.channel.send({files: [attachment]});
+            
         case 'g!points':
             gambling.points(message);
             break;
@@ -194,8 +206,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(10000, () => {
-    console.log('express:'.yellow+'listening for plex webhooks'.green);
+    console.log('express: '.yellow+'listening for plex webhooks'.green);
 });
-
 
 client.login(process.env.DISCORD_TOKEN);

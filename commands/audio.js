@@ -7,7 +7,7 @@ const {
     createAudioPlayer, createAudioResource 
 } = require('@discordjs/voice');
 
-const q = [];
+var q = [];
 var connection = null;
 var player = createAudioPlayer();
 

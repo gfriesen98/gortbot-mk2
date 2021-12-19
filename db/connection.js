@@ -11,6 +11,6 @@ mongoose.connect(connection, opts, (err) => {
     console.error(err);
     throw err;
   } else {
-    console.log('mongoose:'.yellow+" Connected to DB.".green);
+    console.log('mongoose:'.yellow+" connected to db.".green);
   }
 })

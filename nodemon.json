@@ -1,0 +1,3 @@
+{
+    "ignore": ["assets/pokemon/*.json", "assets/moves/*.json"]
+}

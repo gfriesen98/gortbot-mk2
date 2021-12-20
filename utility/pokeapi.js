@@ -19,12 +19,12 @@ module.exports = {
         try {
             await pfs.access(`/home/garett/gortbot-mk2/assets/pokemon/${filename}`);
             console.log(`${poke.name} exists in assets/pokemon`);
-            const data = await pfs.readFile(`/home/garett/gortbot-mk2/assets/pokemon/${filename}`);
-            const p = JSON.parse(data);
+            let data = await pfs.readFile(`/home/garett/gortbot-mk2/assets/pokemon/${filename}`);
+            let p = JSON.parse(data);
             return { success: true, pokemon: p };
         } catch (err) {
             console.log(`${poke.name} will be downloaded and saved`);
-            const res = await Axios.get(poke.url);
+            let res = await Axios.get(poke.url);
             let data = JSON.stringify(res.data);
             try {
                 await pfs.writeFile(`/home/garett/gortbot-mk2/assets/pokemon/${filename}`, data);
@@ -51,21 +51,24 @@ module.exports = {
      * @returns moveset
      */
     getMoves: async function (moves) {
+        if (moves === [] || moves === undefined) return []; // handful of pokemon from the api dont have moves set
         const moveset = [];
         let m = [];
         for (let i = 0; i < 4; i++) {
-            m.push(moves[getRandomInt(0, moves.length)]);
+            m.push(moves[getRandomInt(0, moves.length-1)]);
         }
+        console.log(m, moves);
         // replace possible duplicates with new numbers
-        m = m.filter((n, i) => {
-            if (m.indexOf(n) != i) {
-                return getRandomInt(0, moves.length);
-            } else {
-                return n;
+        let seen = new Set();
+        m.forEach((n, i) => {
+            while(seen.has(n)) {
+                m[i] = n = moves[getRandomInt(0, moves.length)];
             }
+            seen.add(n);
         });
 
         for (const n of m) {
+            if (typeof(n) === 'undefined') return console.error('Move is undefined for no reason');
             try {
                 await pfs.access(`/home/garett/gortbot-mk2/assets/moves/${n.move.name}.json`);
                 console.log(`${n.move.name} exists`);
@@ -87,6 +90,22 @@ module.exports = {
         }
         console.log(moveset);
         return moveset;
+    },
+
+    /**
+     * @todo
+     * Get a pokemons ability
+     */
+    getAbility: async function (abilities) {
+        
+    },
+
+    /**
+     * @todo
+     * Get a held item for a pokemon
+     */
+    getItem: async function () {
+
     }
 }
 

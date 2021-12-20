@@ -6,6 +6,9 @@ const userModel = new Schema({
         type: String,
         required: true
     },
+    currentNickname: {
+        type: String,
+    },
     points: {
         type: Number,
         default: 0

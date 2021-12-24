@@ -1,6 +1,8 @@
+const fs = require('fs');
 const { initializeUser } = require('../utility/bouncer');
 const { generateTeam, turn, calculateDamage } = require('../utility/pokemon');
-const { getRandomInt } = require('../utility/randomizers');
+const { getRandomInt, getBattleRandomNum } = require('../utility/math');
+const { MessageAttachment } = require('discord.js');
 
 /**
  * @todo
@@ -35,47 +37,69 @@ module.exports = {
         if (user.success) {
             const type = content[1];
             const partyLength = content[2];
-            if (partyLength > 6 || partyLength < 1) return message.channel.send('g!battle [random|constructed] [1-6]')
+            if (partyLength > 6 || partyLength < 0) return message.channel.send('g!battle [random|constructed] [1-6]')
             console.log(type);
             switch (type) {
                 case 'random':
-                    const playerName = user.currentNickname;
-                    const playerTeam = await generateTeam(partyLength);
-                    const enemyTeam = await generateTeam(partyLength);
+                    const NAME = user.currentNickname;
+                    const ENEMYNAME = "Bob";
                     const battleLog = [];
+                    let playerTeam = await generateTeam(partyLength);
+                    let enemyTeam = await generateTeam(partyLength);
                     let endBattle = false; //set to true when one teams party is wiped
+                    let currentTurn = 1;
+
                     // main sim loop
                     while (!endBattle) {
-                        let currentPlayerMon = playerTeam[0];
-                        let currentEnemyMon = enemyTeam[0];
-                        let currentHP = currentPlayerMon.stats[0].real_stat;
-                        let EcurrentHP = currentEnemyMon.stats[0].real_stat;
-                        battleLog.push(`${playerName} brought out ${currentPlayerMon.name}!`);
-                        battleLog.push(`Bill brought out ${enemyTeam[0].name}!`);
-                        battleLog.push(`(You) ${currentPlayerMon.name} HP: ${currentPlayerMon.stats[0].real_stat}`);
-                        currentPlayerMon.stats.forEach(n => {
-                            battleLog.push(`(You) ${n.name}: ${n.real_stat} | base: ${n.base_stat}`);
-                        })
-                        battleLog.push(`(Bill) ${currentEnemyMon.name} HP: ${currentEnemyMon.stats[0].real_stat}`);
-                        currentEnemyMon.stats.forEach(n => {
-                            battleLog.push(`(You) ${n.name}: ${n.real_stat} | base: ${n.base_stat}`);
-                        })
+                        let result = turn(playerTeam[0], enemyTeam[0], currentTurn, NAME, ENEMYNAME, 'none');
+                        console.log(result);
+                        battleLog.push(result.turnLog);
+                        if (result.death.isDead) {
+                            if (result.death.who == 'player') playerTeam.shift();
+                            if (result.death.who == 'enemy') enemyTeam.shift();
+                        }
 
-                        let playerMove = currentPlayerMon.moveset[getRandomInt(0, currentPlayerMon.moveset.length-1)];
-                        battleLog.push(`${currentPlayerMon.name} used ${playerMove.name}`);
-                        let playerDmg = calculateDamage(
-                            currentPlayerMon.level, playerMove.power, 
-                            currentPlayerMon.stats[1].real_stat, currentEnemyMon.stats[2].real_stat,
-                            1, 1, 1, 0.85, 1, 1, 1, 1
-                        );
-                        battleLog.push(`${currentPlayerMon.name} delt ${playerDmg} damage to ${currentEnemyMon.name}!`);
-                        EcurrentHP = EcurrentHP - playerDmg;
-                        battleLog.push(`${currentEnemyMon.name} HP: ${EcurrentHP}`);
+                        if (playerTeam.length <= 0) {
+                            battleLog.push(`${NAME} lost!`);
+                            endBattle = true;
+                        }
 
-                        endBattle = true;
+                        if (enemyTeam.length <= 0) {
+                            battleLog.push(`${NAME} won!`);
+                            endBattle = true;
+                        }
+
+                        if (typeof(result.playerHP) === 'undefined' && !result.death.isDead) {
+                            // check for confustion/status attack here??
+                            battleLog.push(`${NAME}'s pokemon took no damage!`);
+                        } else {
+                            playerTeam[0].stats[0].real_stat = result.playerHP;
+                        }
+
+                        if (typeof(result.enemyHP) === 'undefined' && !result.death.isDead) {
+                            battleLog.push(`${ENEMYNAME}'s pokemon took no damage!`);
+                        } else {
+                            enemyTeam[0].stats[0].real_stat = result.enemyHP ;
+                        }
+                        currentTurn++;
+
+                        if (currentTurn > 50) {
+                            endBattle = true;
+                        }
                     }
+                    battleLog.push(`ENDING TURN: ${currentTurn}`);
+                    let output = battleLog.flat().join('\n');
+                    let filename = `/tmp/pokemon_logs/${NAME}-${Date.now()}.txt`;
+                    fs.writeFile(filename, output, (err) => {
+                        console.log(err);
+                        return message.channel.send('error sending log');
+                    });
+                    let attachment = new MessageAttachment(filename, 'log.txt');
+                    return message.channel.send({files: [attachment]});
 
-                    console.log(battleLog);
+                default:
+                    return message.channel.send(`${type} is not valid`);
+
             }
         } else {
             return message.channel.send('error');

@@ -1,6 +1,6 @@
 const Axios = require('axios');
 const pfs = require('fs/promises');
-const { getRandomInt } = require('../utility/randomizers');
+const { getRandomInt } = require('./math');
 
 module.exports = {
 

@@ -1,5 +1,5 @@
 const { getPokemon, getMoves } = require('../utility/pokeapi');
-const { getRandomInt } = require('../utility/randomizers');
+const { getRandomInt, calculateDamage, getBattleRandomNum } = require('./math');
 const { HARDY, LONELY, BRAVE, 
     ADAMANT, NAUGHTY, DOCILE,
     BOLD, RELAXED, IMPISH,
@@ -63,6 +63,38 @@ function makeStat(N, B, I, E, L) {
 function calculateHPStat(B, I, E, L) {
     let stat = Math.floor((2 * B + I + E) * L / 100 + L + 10);
     return stat;
+}
+
+function getMove(moveset, len) {
+    return moveset[getRandomInt(0, len)];
+}
+
+/**
+ * Function to run attack checks to determine if
+ * the defending pokemon gets killed or not.
+ * 
+ * @todo Generalize the damage calculation to also deal with fixed damage and other effects
+ * @param {object} attacker Attacking pokemon
+ * @param {object} defender Defending pokemon
+ * @param {object} move Attacking move
+ * @param {number} defenderHP Defender HP
+ * @returns {newHP, isDead, dmg}
+ */
+function dealDamage(attacker, defender, move, defenderHP) {
+    let isDead = false;
+    if (typeof(move.power) === 'undefined') return {newHP: undefined, isDead: false, dmg: 0};
+    let dmg = Math.floor(
+        calculateDamage(
+            attacker.level, move.power,
+            attacker.stats[1].real_stat, defender.stats[2].real_stat,
+            1, 1, 1, getBattleRandomNum(), 1, 1, 1, 1
+        )
+    );
+    let newHP = defenderHP - dmg;
+    if (newHP <= 0) {
+        isDead = true;
+    }
+    return {newHP, isDead, dmg};
 }
 
 module.exports = {
@@ -161,30 +193,75 @@ module.exports = {
     },
 
     /**
-     * Calculates the damage delt to the target pokemon
-     * 
-     * @param {number} Level Pokemons level
-     * @param {number} Power Move Power
-     * @param {number} A     Attacking Pokemons Attack
-     * @param {number} D     Target Pokemons Defense
-     * @param {number} Targets Number of Targets
-     * @param {number} Weather Weather Multiplier
-     * @param {number} Critical Critical Hit Multiplier
-     * @param {number} random Random multiplier
-     * @param {number} STAB Same Type Attack Bonus
-     * @param {number} Type Type Effectiveness Multiplier
-     * @param {number} Burn Burn Multiplier
-     * @param {number} other Other (stacked) Effects
-     * @returns Damage delt to target pokemon
+     * Runs the steps needed to simulate one turn
+     * of a pokemon battle
      */
-    calculateDamage(Level, Power, A, D, Targets, Weather, Critical, random, STAB, Type, Burn, other) {
-        let bracket1 = (2 * Level)/5;
-        let bracket2 = ((bracket1+2)*Power*(A/D)/50)+2;
-        // let brackets = 2 + (((2 + (Level*2)/5)*Power*(A/D))/5);
-        return bracket2 * Targets * Weather * Critical * random * STAB * Type * Burn * other;
-    },
+    turn(playerMon, enemyMon, turn, NAME, ENEMYNAME, deathType) {
+        const LOG = [];
 
-    turn() {
+        const MOVE = getMove(playerMon.moveset, playerMon.moveset.length - 1);
+        let playerHP = playerMon.stats[0].real_stat;
 
+        const ENEMYMOVE = getMove(enemyMon.moveset, enemyMon.moveset.length - 1);
+        let enemyHP = enemyMon.stats[0].real_stat;
+
+        if (turn == 1) {
+            LOG.push(`${NAME} brought out ${playerMon.name}!`);
+            LOG.push(`${ENEMYNAME} brought out ${enemyMon.name}!`);
+        }
+
+        if (deathType === 'player') {
+            LOG.push(`${NAME} brought out ${playerMon.name}`);
+        } else if (deathType === 'enemy') {
+            LOG.push(`${ENEMYNAME} brought out ${enemyMon.name}!`);
+        }
+
+        LOG.push(`TURN ${turn}`);
+        LOG.push(`${playerMon.name}: ${playerHP} HP\n${enemyMon.name}: ${enemyHP} HP`);
+
+        /**
+         * @todo add:
+         *  speed check
+         *  accuracy check
+         * 
+         * lets just do a coin flip for now
+         *  0 - player, 1 - enemy
+        */
+        let playerGoesFirst = getRandomInt(0, 1) == 1 ? true : false;
+        if (playerGoesFirst) {
+            let { newHP, isDead, dmg } = dealDamage(playerMon, enemyMon, MOVE, enemyHP);
+            LOG.push(`${NAME}'s ${playerMon.name} used ${MOVE.name}!`);
+            LOG.push(`${enemyMon.name} took ${dmg} damage!`);
+            if (isDead) {
+                LOG.push(`${ENEMYNAME}'s ${enemyMon.name} fainted!`);
+                return { turnLog: LOG, death: { who: 'enemy', isDead: true } };
+            }
+            let { EnewHP, EisDead, Edmg } = dealDamage(enemyMon, playerMon, ENEMYMOVE, playerHP);
+            LOG.push(`${ENEMYNAME}'s ${enemyMon.name} used ${ENEMYMOVE.name}!`);
+            LOG.push(`${playerMon.name} took ${Edmg} damage!`);
+            if (EisDead) {
+                LOG.push(`${NAME}'s ${playerMon.name} fainted!`);
+                return { turnLog: LOG, death: { who: 'player', isDead: true } };
+            }
+            return { turnLog: LOG, death: { who: 'nobody', isDead: false }, playerHP: EnewHP, enemyHP: newHP };
+
+        } else {
+            let { newHP, isDead, dmg } = dealDamage(enemyMon, playerMon, ENEMYMOVE, playerHP);
+            LOG.push(`${ENEMYNAME}'s ${enemyMon.name} used ${ENEMYMOVE.name}!`);
+            LOG.push(`${playerMon.name} took ${dmg} damage!`);
+            if (isDead) {
+                LOG.push(`${NAME}'s ${playerMon.name} fainted!`);
+                return { turnLog: LOG, death: { who: 'player', isDead: true } };
+            }
+            let { EnewHP, EisDead, Edmg } = dealDamage(playerMon, enemyMon, MOVE, enemyHP);
+            LOG.push(`${NAME}'s ${playerMon.name} used ${MOVE.name}!`);
+            LOG.push(`${enemyMon.name} took ${Edmg} damage!`);
+            if (EisDead) {
+                LOG.push(`${ENEMYNAME}'s ${enemyMon.name} fainted!`);
+                return { turnLog: LOG, death: { who: 'enemy', isDead: true } };
+            }
+            return { turnLog: LOG, death: { who: 'nobody', isDead: false }, playerHP: newHP, enemyHP: EnewHP };
+        }
+        
     }
 }

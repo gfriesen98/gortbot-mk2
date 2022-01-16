@@ -1,10 +1,10 @@
 module.exports = {
 
     /**
-     * 
+     * Generates a random integer from a range between integers
      * @param {int} min Minimum
      * @param {int} max Maximum
-     * @returns {int} Random Integer between 
+     * @returns {int} Random Integer between Min and Max
      */
     getRandomInt: function (min, max) {
         min = Math.ceil(min);
@@ -47,4 +47,15 @@ module.exports = {
         // let brackets = 2 + (((2 + (Level*2)/5)*Power*(A/D))/5);
         return bracket2 * Targets * Weather * Critical * random * STAB * Type * Burn * other;
     },
+
+    /**
+     * Returns human readable file size from bytes
+     * 
+     * @param {string} filesize file size from discord message attachment
+     * @returns stringified file size
+     */
+    getFileSize(filesize) {
+        var i = Math.floor(Math.log(filesize) / Math.log(1024));
+        return ((filesize / Math.pow(1024, i).toFixed(2) * 1).toFixed(2) + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i]);
+      }
 }

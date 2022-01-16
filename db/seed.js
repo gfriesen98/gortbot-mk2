@@ -1,23 +1,24 @@
-require('./connection.js');
+const {connect} = require('./connection.js');
 const axios = require('axios');
 const Rom = require('../db/models/rom');
 // /home/garett/drive1/Roms/NEOGEO/neogeo.zip
 // /home/garett/drive1/Roms/NEOGEO/magdrop3.zip
 
 async function poop() {
+    console.log(process.env.DB_USERNAME);
+    connect();
     const rom = new Rom({
-        title: 'neogeo',
+        name: 'neogeo',
         path: '/home/garett/drive1/Roms/NEOGEO/neogeo.zip',
         category: 'neogeo',
-        size: '1.60MB',
-        bios: true
+        filesize: '1.60MB',
     });
 
     const rom2 = new Rom({
-        title: 'magical drop 3',
+        name: 'magical drop 3',
         path: '/home/garett/drive1/Roms/NEOGEO/magdrop3.zip',
         category: 'neogeo',
-        size: '8.15MB',
+        filesize: '8.15MB',
     });
 
     const res = await rom.save();

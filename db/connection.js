@@ -1,16 +1,17 @@
 const mongoose = require('mongoose');
 const colors = require('colors');
-const connection = `mongodb://gortbot:${process.env.DB_PASS}@${process.env.MONGO_IP}:27017/gortbot?authSource=admin&retryWrites=true&w=majority`;
-const opts = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-};
 
-mongoose.connect(connection, opts, (err) => {
-  if (err) {
-    console.error(err);
-    throw err;
-  } else {
-    console.log('mongoose:'.yellow+" connected to db.".green);
+module.exports = {
+  connect: () => {
+    console.log('connecting...');
+    mongoose.connect(`mongodb://${process.env.MONGO_USERNAME}:${process.env.MONGO_PASS}@${process.env.MONGO_IP}:27017/${process.env.MONGO_DB}?authSource=admin&w=1`, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }).then(() => {
+      console.log('mongoose:'.yellow+" connected to db.".green);
+    }).catch(err => {
+      console.error(err);
+      process.exit();
+    });
   }
-})
+}

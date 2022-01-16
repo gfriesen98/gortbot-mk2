@@ -19,6 +19,10 @@ const userModel = new Schema({
     },
     latestBattle: {
         type: String
+    },
+    depressionMeasure: {
+        type: Number,
+        default: 0
     }
 });
 

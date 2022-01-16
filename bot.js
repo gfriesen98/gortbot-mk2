@@ -1,6 +1,6 @@
 require('dotenv').config();
-require('./startup');
-require('./db/connection');
+const {startup} = require('./startup')
+const {connect} = require('./db/connection');
 const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
@@ -14,6 +14,8 @@ const colors = require('colors');
 const https = require('https');
 const audio = require('./commands/audio');
 const movie = require('./commands/movie');
+const grievance = require('./commands/grievance');
+const images = require('./commands/images');
 const gambling = require('./commands/gambling');
 const SECRET = process.env.SECRET;
 const P = process.env.PREFIX;
@@ -77,13 +79,33 @@ client.on('messageCreate', async message => {
             break;
 
         case 'g!movies':
+            const args = message.content.split(' ');
             const command = await exec('bash scripts/movie-list.sh');
-            if (command.stderr) {
-                console.log(command.stderr);
-                return null;
+            console.log(args);
+            if (args.length === 1) {
+                if (command.stderr) {
+                    console.log(command.stderr);
+                    return null;
+                }
+                const attachment = new MessageAttachment('/tmp/plex/lists/movies.txt', 'movies.txt');
+                return message.channel.send({files: [attachment]});
+            } else {
+                args.shift();
+                const strings = args.join(" ");
+                console.log(strings);
+                try {
+                    const command = await exec(`bash scripts/search.sh ${strings}`);
+                    if (command.stderr) {
+                        throw new Error(command.stderr);
+                    }
+    
+                    if (command.stdout) {
+                        return message.channel.send('```'+command.stdout+'```')
+                    }
+                } catch (err) {
+                    return message.channel.send('No results :(');
+                }
             }
-            const attachment = new MessageAttachment('/tmp/plex/lists/movies.txt', 'movies.txt');
-            return message.channel.send({files: [attachment]});
             
         case 'g!points':
             gambling.points(message);
@@ -92,9 +114,50 @@ client.on('messageCreate', async message => {
         case 'g!battle':
             gambling.battle(message);
             break;
+
+        // case 'g!grieve':
+        //     grievance.post(message);
+        //     break;
+
+        case 'g!giveme':
+            images.giveme(message);
+            break;
+
+        case 'g!meme':
+            images.meme(message);
+            break;
         
         case 'g!help':
-            break;
+            const help = 
+            `
+            \`\`\`yaml
+                ======  gortbot help ======
+            music
+                * need to be in a voice channel to use *
+                - g!play [url: Youtube or Spotify]
+                    - starts a queue/adds to queue
+                - g!pause
+                - g!stop
+                - g!resume
+                - g!skip
+                - g!next
+                    - shows upcoming information
+            gambling
+                - g!points
+                    - your peepee points (work in progress)
+            other
+                - g!movies "optional search inside double quotes"
+                    - shows my collection
+                    - optionally add search text inside double quotes to search
+                - g!nowplaying
+                    - only works when the bots status is WATCHING [something]
+                - g!meme
+                    - shows a random image ive had saved on my phone
+                - g!giveme
+                    - give me a file (up to discords limit), thank you for your donation
+            \`\`\`
+            `;
+            return message.channel.send(help, {ephemeral: true});
         default:
             message.channel.send('Not a command there buddy ok? You stupid little guy huh? Yeah thats right. Stupid, and small.');
     }
@@ -164,7 +227,9 @@ client.once('disconnect', () => {
 
 app.post('/', upload.single('thumb'), async (req, res, next) => {
     const payload = JSON.parse(req.body.payload);
-    if (payload.Player.uuid !== process.env.PLEX_PLAYER_UUID) return res.sendStatus(401);
+    if (payload.event !== 'library.new'){
+        if (payload.Player.uuid !== process.env.PLEX_PLAYER_UUID) return res.sendStatus(401);
+    }
 
     switch (payload.event) {
         case 'media.resume':
@@ -175,9 +240,9 @@ app.post('/', upload.single('thumb'), async (req, res, next) => {
                 console.error("'/tmp/plex' does not exist");
             }
             client.user.setActivity(
-                payload.Metadata.type == 'movie' ?
-                    payload.Metadata.title
-                :   payload.Metadata.grandparentTitle,
+                payload.Metadata.type == 'movie'
+                    ?   payload.Metadata.title
+                    :   payload.Metadata.grandparentTitle,
              {type: 'WATCHING'});
             return res.sendStatus(200);
         case 'media.pause':
@@ -189,6 +254,10 @@ app.post('/', upload.single('thumb'), async (req, res, next) => {
             }
             client.user.setActivity('');
             return res.sendStatus(200);
+        case 'library.new':
+            console.log(payload.Metadata);
+            const chat = client.channels.cache.get('920512105906593812');
+            return chat.send(`${payload.Metadata.title} added`);
         default:
             return res.sendStatus(400);
     }
@@ -209,4 +278,6 @@ app.listen(10000, () => {
     console.log('express: '.yellow+'listening for plex webhooks'.green);
 });
 
+connect();
+startup();
 client.login(process.env.DISCORD_TOKEN);

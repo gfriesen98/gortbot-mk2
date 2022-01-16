@@ -14,7 +14,7 @@ const romModel = new Schema({
         type: String,
         required: true
     },
-    fileSize: {
+    filesize: {
         type: String,
         required: true
     }

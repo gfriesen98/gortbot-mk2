@@ -1,34 +1,48 @@
 const pfs = require('fs/promises');
+const fs = require('fs');
 const colors = require('colors');
+const folders = [process.env.GORTBOT_DIR, process.env.PLEX_DIR, process.env.POKEMON_DIR, process.env.LOGS_DIR];
 
-async function checkFolders() {
+/**
+ * Checks if a folder exists
+ * @param {string} dir absolute path directory
+ * @returns {boolean}
+ */
+function checkFolderSync(dir) {
     try {
-        await pfs.access('/tmp/plex');
-        await pfs.access('/tmp/pokemon_logs');
-        console.log('startup: '.yellow+'folders exist'.green);
+        fs.accessSync(dir);
+        console.log(`startup: `.yellow+`${dir}`+` OK`.green);
+        return true
     } catch (err) {
-        console.log('temporary folders do not exitst'.yellow);
-        console.log('creating file structure...'.yellow);
-        await createFolders();
-   }
+        return false;
+    }
 }
 
-async function createFolders() {
+/**
+ * Creates a folder synchronously
+ * Process exits on error
+ * @param {string} dir absolute path directory
+ */
+function createFolderSync(dir) {
     try {
-        await pfs.mkdir('/tmp/plex');
-        await pfs.mkdir('/tmp/plex/img');
-        await pfs.mkdir('/tmp/plex/lists');
-        await pfs.mkdir('/tmp/pokemon_logs');
-        return true;
+        console.log(`created ${dir}`.dim.italic);
+        fs.mkdirSync(dir);
     } catch (err) {
-        console.error(err);
-        console.log('error creating folder structures'.bgRed.white);
-        throw err;
+        console.err(err);
+        process.exit();
     }
 }
 
 module.exports = {
+
+    /**
+     * Check for required temp folders on startup
+     * Process exits on error
+     */
     startup: () => {
-        checkFolders();
+        console.log('startup: '.yellow+' checking folders...'.italic);
+        for (const folder of folders) {
+            !checkFolderSync(folder) && createFolderSync(folder);
+        }
     }
 }

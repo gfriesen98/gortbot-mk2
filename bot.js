@@ -235,9 +235,9 @@ app.post('/', upload.single('thumb'), async (req, res, next) => {
         case 'media.resume':
         case 'media.play':
             try {
-                await pfs.writeFile('/tmp/plex/currently-playing.json', req.body.payload);
+                await pfs.writeFile(`${process.env.PLEX_DIR}/currently-playing.json`, req.body.payload);
             } catch (err) {
-                console.error("'/tmp/plex' does not exist");
+                console.error("'/tmp/gortbot/plex' does not exist");
             }
             client.user.setActivity(
                 payload.Metadata.type == 'movie'
@@ -248,9 +248,9 @@ app.post('/', upload.single('thumb'), async (req, res, next) => {
         case 'media.pause':
         case 'media.stop':
             try {
-                await pfs.rm('/tmp/plex/currently-playing.json');
+                await pfs.rm(`${process.env.PLEX_DIR}/currently-playing.json`);
             } catch (err) {
-                console.error("'/tmp/plex/currently-playing.json' does not exist");
+                console.error("'/tmp/gortbot/plex/currently-playing.json' does not exist");
             }
             client.user.setActivity('');
             return res.sendStatus(200);
@@ -278,6 +278,6 @@ app.listen(10000, () => {
     console.log('express: '.yellow+'listening for plex webhooks'.green);
 });
 
-connect();
 startup();
+connect();
 client.login(process.env.DISCORD_TOKEN);

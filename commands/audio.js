@@ -228,6 +228,17 @@ module.exports = {
             } else {
                 playSong(message);
             }
+        });
+
+        player.on('error', (err) => {
+            console.error(`Error playing audio:`);
+            console.error(err);
+            q.shift();
+            if (q.length === 0) {
+                connection.destroy();
+            } else {
+                playSong(message);
+            }
         })
     },
 

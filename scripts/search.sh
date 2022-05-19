@@ -1,5 +1,5 @@
 #!/bin/bash
-param=$1
-len=$(grep -iF "$param" /tmp/plex/lists/movies.txt | wc -l)
-echo "Total: $len"
-grep -iF "$param" /tmp/plex/lists/movies.txt
+
+output=$(grep -iF "$1" /home/garett/gortbot_temp/masterlist.txt | wc -l)
+echo "Total: $output"
+grep -iF "$1" /home/garett/gortbot_temp/masterlist.txt

@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
+const { downloadFile } = require('../utility/download');
 const pfs = fs.promises;
 
 function movie(DATA) {
@@ -40,11 +41,11 @@ function send(Metadata, TYPE, chat, filename) {
             },
             timestamp: new Date(),
             footer: {
-                text: `${Metadata.contentRating}`
+                text: `Rated ${Metadata.contentRating}`
             }
         };
 
-        chat.send({ embeds: [embed], files: [`/tmp/plex/img/${filename}`] });
+        chat.send({ embeds: [embed], files: [`/tmp/gortbot/plex/img/${filename}`] });
     } else {
         const embed = {
             title: `Now Playing ${Metadata.title}`,
@@ -69,7 +70,7 @@ function send(Metadata, TYPE, chat, filename) {
         };
 
         console.log(filename);
-        chat.send({ embeds: [embed], files: [`/tmp/plex/img/${filename}`] });
+        chat.send({ embeds: [embed], files: [`/tmp/gortbot/plex/img/${filename}`] });
     }
 }
 
@@ -77,23 +78,23 @@ module.exports = {
 
     currentlyPlaying: async function (message, chat) {
         try {
-            await pfs.access('/tmp/plex/currently-playing.json');
+            await pfs.access(`${process.env.PLEX_DIR}/currently-playing.json`);
         } catch (err) {
             console.error(err);
             console.error('nothing is currently playing');
             return message.channel.send('Nothing is playing');
         }
 
-        const { Metadata: DATA, Player } = JSON.parse(await pfs.readFile('/tmp/plex/currently-playing.json'));
+        const { Metadata: DATA, Player } = JSON.parse(await pfs.readFile(`${process.env.PLEX_DIR}/currently-playing.json`));
         if (Player.uuid !== process.env.PLEX_PLAYER_UUID) return null;
 
         const TYPE = DATA.type;
         const METADATA = TYPE === 'episode' ? episode(DATA) : movie(DATA);
         const PARAMS = `${METADATA.thumb}?X-Plex-Token=${process.env.PLEX_TOKEN}`;
         const FILENAME = `${
-            METADATA.ratingKey+METADATA.title.replace(/ /g, '_').replace('/\'/g', '')
+            METADATA.index+METADATA.title.replace(/ /g, '_').replace('/\'/g', '')
         }.jpg`;
-        const WRITER = fs.createWriteStream(`/tmp/plex/img/${FILENAME}`);
+        // const WRITER = fs.createWriteStream(`/tmp/gortbot/plex/img/${FILENAME}`);
 
         /**
          * @todo
@@ -102,23 +103,13 @@ module.exports = {
          * download process, it works :/
          */
         try {
-            await pfs.access(`/tmp/plex/img/${FILENAME}`);
+            await pfs.access(`/tmp/gortbot/plex/img/${FILENAME}`);
             console.log('file exists');
-            send(METADATA, TYPE, chat, FILENAME);
+            send(METADATA, TYPE, chat, `/tmp/gortbot/plex/img/${FILENAME}`);
         } catch (err) {
-            axios({
-                method: 'GET',
-                url: process.env.PLEX_URL+PARAMS,
-                responseType: 'stream',
-            }).then((res) => {
-                res.data.pipe(WRITER);
-    
-                WRITER.on('finish', () => {
-                    send(METADATA, TYPE, chat, FILENAME);
-                });
-    
-                WRITER.on('error', () => console.log('error downloading'));
-            });
+            let url = process.env.PLEX_URL+PARAMS;
+            downloadFile(url, '/tmp/gortbot/plex/img/'+FILENAME);
+            send(METADATA, TYPE, chat, FILENAME);
         }
 
     }

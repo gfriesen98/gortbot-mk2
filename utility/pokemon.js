@@ -70,9 +70,7 @@ function getMove(moveset, len) {
 }
 
 /**
- * Function to run attack checks to determine if
- * the defending pokemon gets killed or not.
- * 
+ * Function to run attack checks to determine if the defending pokemon gets killed or not.
  * @todo Generalize the damage calculation to also deal with fixed damage and other effects
  * @param {object} attacker Attacking pokemon
  * @param {object} defender Defending pokemon

@@ -1,4 +1,4 @@
-const Axios = require('axios');
+const Axios = require('axios').default;
 const pfs = require('fs/promises');
 const { getRandomInt } = require('./math');
 
@@ -51,7 +51,7 @@ module.exports = {
      * @returns moveset
      */
     getMoves: async function (moves) {
-        if (moves === [] || moves === undefined) return []; // handful of pokemon from the api dont have moves set
+        if (moves === [] || typeof(moves) === 'undefined') return []; // handful of pokemon from the api dont have moves set
         const moveset = [];
         let m = [];
         for (let i = 0; i < 4; i++) {

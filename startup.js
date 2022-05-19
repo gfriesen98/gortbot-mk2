@@ -1,7 +1,7 @@
 const pfs = require('fs/promises');
 const fs = require('fs');
 const colors = require('colors');
-const folders = [process.env.GORTBOT_DIR, process.env.PLEX_DIR, process.env.POKEMON_DIR, process.env.LOGS_DIR];
+const folders = [process.env.GORTBOT_DIR, process.env.PLEX_DIR, '/tmp/gortbot/plex/img', process.env.POKEMON_DIR, process.env.LOGS_DIR];
 
 /**
  * Checks if a folder exists
@@ -28,7 +28,7 @@ function createFolderSync(dir) {
         console.log(`created ${dir}`.dim.italic);
         fs.mkdirSync(dir);
     } catch (err) {
-        console.err(err);
+        console.error(err);
         process.exit();
     }
 }

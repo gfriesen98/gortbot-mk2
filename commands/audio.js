@@ -149,13 +149,20 @@ module.exports = {
      * 
      * Calling this method again will just add a song to the queue!
      * 
+     * todo need to rewrite to try and fix track queue issues. otheriwse its fine
+     * 
      * @param {Object} message discord.js message object
      * @returns Message to channel
      */
     setup: async (message) => {
         const args = message.content.split(" ");
         if (!message.member.voice.channel) return message.channel.send("You need to be in a voice channel there bud.");
-        if (!args[1].startsWith('https://')) return message.channel.send("You are so small. Such a small and worthless being. Tiny, tiny man. Tiny man must give me a valid URL to proceed...");
+        if (!args[1].startsWith('https://'))
+            return 
+                message.channel.send(
+                    "You are so small. Such a small and worthless being. " +
+                    "Tiny, tiny man. Tiny man must give me a valid URL to proceed..."
+                );
 
         // If queue length exists, append request to queue and exit
         if (q.length > 0) {
@@ -298,62 +305,5 @@ module.exports = {
             .setThumbnail(nextUp.imgURL);
         
         return message.channel.send({embeds: [messageEmbed]});
-    },
-
-    inQueue: async (message) => {
-        if (message.content.endsWith('g!inq')) return message.channel.send('Provide me sustinence (search terms)');
-        const query = message.content.replace('g!inq ', '').split(' ');
-        const queryWords = query.split(' ').map(m => {m = m.replace(/[^\w\s]/gi, ''); return m.toLowerCase()});
-        const queryLetters = query.split(' ').map(m => {
-            m = m.replace(/[^\w\s]/gi, '').toLowerCase();
-            return m.split('');
-        });
-        const queueTitles = q.map((n, i) => {
-            return {
-                title: n.title,
-                words: n.title.split(' ').map(m => {m = m.replace(/[^\w\s]/gi, ''); return m.toLowerCase()}),
-                wordLetters: n.title.split(' ').map(m => {
-                    m = m.replace(/[^\w\s]/gi, '').toLowerCase();
-                    return m.split('');
-                }),
-                queueIndex: i
-            };
-        });
-
-        const results = queueTitles.map(n => {
-            var matchingWordIdx = 0;
-            var matchingLetterIdx = 0;
-            var totalLetters = 0;
-            for (const m of query) {
-                n.words.forEach(w => {
-                    console.log('m',m);
-                    console.log('w', w);
-                    if (m === w) {
-                        matchingWordIdx++;
-                    } else {
-                        console.log('else');
-                        const qSplit = m.split('');
-                        for (const p of n.wordLetters){
-                            totalLetters+=p.length;
-                            for(const g of qSplit) {
-                                if (g === p) {
-                                    matchingLetterIdx++;
-                                }
-                            }
-                        }
-                    }
-                });
-                console.log('letters: ',matchingLetterIdx);
-                console.log('words: ',matchingWordIdx);
-                return {
-                    matchingWordIdx: (matchingWordIdx/n.words.length)*100,
-                    matchingLetterIdx: (matchingLetterIdx/totalLetters)*100,
-                    searchQuery: query.join(" "),
-                    bestMatch: queueTitles[n.queueIndex]
-                }
-            }
-        });
-        console.log(results);
-
     },
 }

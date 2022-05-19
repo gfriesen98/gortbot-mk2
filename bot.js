@@ -74,27 +74,30 @@ client.on('messageCreate', async message => {
             break;
 
         case 'g!nowplaying':
-            const chat = client.channels.cache.get('920512105906593812');
+            const chat = client.channels.cache.get('965478530936868864');
             movie.currentlyPlaying(message, chat);
             break;
 
-        case 'g!movies':
-            const args = message.content.split(' ');
-            const command = await exec('bash scripts/movie-list.sh');
-            console.log(args);
+        case 'g!search':
+            const args = message.content.split(' ').shift();
+            const command = await exec('bash scripts/make-lists.sh');
+
+            // todo
+
+
             if (args.length === 1) {
                 if (command.stderr) {
                     console.log(command.stderr);
                     return null;
                 }
-                const attachment = new MessageAttachment('/tmp/plex/lists/movies.txt', 'movies.txt');
+                const attachment = new MessageAttachment(`${process.env.OTHER_GORTBOT}/movies.txt`, 'movies.txt');
                 return message.channel.send({files: [attachment]});
             } else {
                 args.shift();
                 const strings = args.join(" ");
                 console.log(strings);
                 try {
-                    const command = await exec(`bash scripts/search.sh ${strings}`);
+                    const command = await exec(`bash scripts/search.sh movies \"${strings}\"`);
                     if (command.stderr) {
                         throw new Error(command.stderr);
                     }
@@ -159,7 +162,11 @@ client.on('messageCreate', async message => {
             `;
             return message.channel.send(help, {ephemeral: true});
         default:
-            message.channel.send('Not a command there buddy ok? You stupid little guy huh? Yeah thats right. Stupid, and small.');
+            message.channel.send(
+                'Not a command there buddy ok? '+
+                'You stupid little guy huh? Yeah thats right. Stupid, and small. '+
+                'Try again later for me okay?'
+            );
     }
 
 });
@@ -227,6 +234,7 @@ client.once('disconnect', () => {
 
 app.post('/', upload.single('thumb'), async (req, res, next) => {
     const payload = JSON.parse(req.body.payload);
+    console.log(payload);
     if (payload.event !== 'library.new'){
         if (payload.Player.uuid !== process.env.PLEX_PLAYER_UUID) return res.sendStatus(401);
     }
@@ -239,11 +247,12 @@ app.post('/', upload.single('thumb'), async (req, res, next) => {
             } catch (err) {
                 console.error("'/tmp/gortbot/plex' does not exist");
             }
-            client.user.setActivity(
+            client.user.setActivity( //grandparent title - title for music
                 payload.Metadata.type == 'movie'
                     ?   payload.Metadata.title
-                    :   payload.Metadata.grandparentTitle,
-             {type: 'WATCHING'});
+                    :   payload.Metadata.type == 'episode' ? payload.Metadata.grandparentTitle
+                        : payload.Metadata.type == 'track' && `🎶${payload.Metadata.grandparentTitle} - ${payload.Metadata.title}`,
+             {type: payload.Metadata.type == 'track' ? 'LISTENIN' : 'WATCHAN'});
             return res.sendStatus(200);
         case 'media.pause':
         case 'media.stop':
@@ -275,7 +284,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(10000, () => {
-    console.log('express: '.yellow+'listening for plex webhooks'.green);
+    console.log('express: '.yellow+'OK'.green);
 });
 
 startup();
